@@ -28,7 +28,7 @@ def suggest_slots(
         List of valid start times as "HH:MM" sorted ascending
     """
 
-    #Reject weekends
+    #Reject invalid dates
     try:
         date_obj = datetime.strptime(day,"%Y-%m-%d")
     except ValueError:
@@ -38,6 +38,9 @@ def suggest_slots(
     WORK_END = 17*60 #17:00
     LUNCH_START = 12*60 #12:00
     LUNCH_END = 13*60 #13:00
+    FRIDAY_CUTOFF = 15*60 #15:00
+
+    is_friday = date_obj.weekday() == 4
 
     def to_minutes(t: str) -> int:
         h, m = map(int, t.split(":"))
@@ -65,6 +68,10 @@ def suggest_slots(
      # Try every possible start minute in working hours
     for start in range(WORK_START, WORK_END - meeting_duration + 1,15):
 
+        #friday new requirement
+        if is_friday and start >= FRIDAY_CUTOFF:
+            continue
+            
         #Adding lunch break
         if LUNCH_START<=start<LUNCH_END:
             continue

@@ -125,3 +125,65 @@ def test_multiple_events_create_gap():
 
     assert "10:00" in slots
     assert "10:15" not in slots
+
+def test_friday_no_meetings_start_at_or_after_1500():
+    """
+    New requirement:
+    On Fridays, meetings must not start at or after 15:00.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-06")  # Friday
+
+    assert "15:00" not in slots
+    assert "15:15" not in slots
+    assert "16:00" not in slots
+
+
+def test_friday_meetings_before_1500_are_allowed():
+    """
+    New requirement:
+    Meetings starting before 15:00 on Fridays should be allowed.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-06")  # Friday
+
+    assert "14:30" in slots
+    assert "14:45" in slots
+
+
+def test_friday_long_meeting_starting_before_1500_is_allowed():
+    """
+    Clarification:
+    On Fridays, meetings are allowed as long as they START before 15:00,
+    even if they end after 15:00.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=60, day="2026-02-06")  # Friday
+
+    assert "14:30" in slots
+    assert "15:00" not in slots
+
+
+def test_non_friday_allows_1500_start():
+    """
+    Control test:
+    On non-Fridays, meetings may start at 15:00.
+    """
+    events = []
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-05")  # Thursday
+
+    assert "15:00" in slots
+    assert "15:15" in slots
+
+
+def test_friday_with_events_still_respects_cutoff():
+    """
+    Combined constraint:
+    Friday cutoff applies even when events exist.
+    """
+    events = [{"start": "13:00", "end": "14:00"}]
+    slots = suggest_slots(events, meeting_duration=30, day="2026-02-06")  # Friday
+
+    assert "14:00" in slots
+    assert "14:30" in slots
+    assert "15:00" not in slots
